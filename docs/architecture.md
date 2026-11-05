@@ -30,7 +30,9 @@ flowchart TD
 
 ### Native Core
 
-Адаптер к Fast DDS: жизненный цикл DomainParticipant, Topic, Publisher/Subscriber, DataWriter/DataReader; обработка ошибок и конфигурация QoS. Вариант реализации — C++ с отдельным стабильным C ABI для bindings. Стабильность ABI является задачей D2S, а не обещанием Fast DDS.
+В Phase 0 основной API реализован на Rust (crate `d2s`), а узкий C++20 адаптер обращается к Fast DDS через CXX (`d2s-sys`). Публичная ABI для других языков ещё не утверждена.
+
+Адаптер к Fast DDS: жизненный цикл DomainParticipant, Topic, Publisher/Subscriber, DataWriter/DataReader; обработка ошибок и конфигурация QoS. На первом этапе — Rust-first и CXX; возможный отдельный стабильный C ABI для других языков остаётся будущим решением. Стабильность ABI является задачей D2S, а не обещанием Fast DDS.
 
 ### SDK Layer
 

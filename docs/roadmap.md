@@ -5,9 +5,9 @@
 ## Phase 0 — архитектурный спайк
 
 - Подтвердить версию Fast DDS, лицензии и требования toolchain.
-- Вручную собрать минимальные два C++ DDS process с общим IDL и QoS.
+- Собрать минимальные два Rust DDS process через CXX/C++20 адаптер к Fast DDS с общим IDL и QoS.
 - Измерить baseline latency и memory.
-- Решить: thin wrapper над Fast DDS или стабильный C ABI.
+- Проверить thin CXX-wrapper над Fast DDS; стабильный C ABI оставить отдельной задачей для будущих SDK.
 - Зафиксировать RFC и архитектурные решения перед кодом.
 
 **Готово, если:** можно воспроизвести интеграционный тест без D2S abstractions.

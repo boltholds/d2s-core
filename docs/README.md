@@ -11,6 +11,7 @@ D2S Platform — планируемая открытая платформа об
 
 ## Чтение по порядку
 
+0. [Phase 0: Rust + CXX + Fast DDS](phase-0.md) — прототип, сборка, два процесса, smoke-test.
 1. [Видение и рамки](vision.md) — какую задачу решает проект, чего не обещаем.
 2. [Архитектура](architecture.md) — компоненты, режимы, границы ответственности.
 3. [Модель DDS](dds-foundations.md) — DomainId, Topic, Participant, QoS, Discovery.
@@ -33,6 +34,7 @@ D2S Platform — планируемая открытая платформа об
 - [ADR-0001: Fast DDS как стартовое ядро](adr/0001-fast-dds-core.md)
 - [ADR-0002: граф федерации с ограниченной видимостью](adr/0002-limited-visibility-graph.md)
 - [ADR-0003: разделение локальных и глобальных идентификаторов](adr/0003-identity-and-domains.md)
+- [ADR-0004: Rust-first core и CXX bridge](adr/0004-rust-first-core.md)
 
 ## Словарь статусов
 
