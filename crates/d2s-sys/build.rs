@@ -31,8 +31,7 @@ fn select_fastdds(workspace: &Path) -> FastDds {
         return FastDds {
             include_dir,
             lib_dir,
-            generator: env::var_os("FASTDDSGEN")
-                .unwrap_or_else(|| OsString::from("fastddsgen")),
+            generator: env::var_os("FASTDDSGEN").unwrap_or_else(|| OsString::from("fastddsgen")),
         };
     }
 
@@ -82,7 +81,9 @@ fn select_fastdds(workspace: &Path) -> FastDds {
     };
 
     fs::create_dir_all(&cache_path).expect("cannot create Fast DDS dependency cache");
-    let cache = cache_path.canonicalize().expect("cannot resolve dependency cache");
+    let cache = cache_path
+        .canonicalize()
+        .expect("cannot resolve dependency cache");
     let bootstrap = workspace.join("scripts/bootstrap-fastdds.sh");
     println!(
         "cargo:warning=Fast DDS: checking local pinned dependency cache at {}",
@@ -138,9 +139,7 @@ fn generate_idl(idl: &Path, out_dir: &Path, generator: &OsString) -> Vec<PathBuf
         .arg(out_dir)
         .arg(idl)
         .output()
-        .unwrap_or_else(|error| {
-            panic!("Cannot run Fast DDS-Gen ({generator:?}): {error}")
-        });
+        .unwrap_or_else(|error| panic!("Cannot run Fast DDS-Gen ({generator:?}): {error}"));
 
     if !result.status.success() {
         panic!(
@@ -183,7 +182,10 @@ fn main() {
     }
     build.compile("d2s_fastdds_native");
 
-    println!("cargo:rustc-link-search=native={}", selected.lib_dir.display());
+    println!(
+        "cargo:rustc-link-search=native={}",
+        selected.lib_dir.display()
+    );
     println!("cargo:rustc-link-lib=dylib=fastdds");
     println!("cargo:rustc-link-lib=dylib=fastcdr");
     // Cargo exposes this to a direct dependent crate via DEP_D2S_FASTDDS_LIBDIR.
