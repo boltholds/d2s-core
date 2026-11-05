@@ -1,0 +1,5 @@
+struct D2sMessage
+{
+    unsigned long index;
+    string text;
+};

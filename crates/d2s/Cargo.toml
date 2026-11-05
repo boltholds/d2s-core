@@ -1,0 +1,12 @@
+[package]
+name = "d2s"
+version = "0.0.1"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Rust-first D2S pub/sub SDK proof of concept"
+
+[dependencies]
+d2s-sys = { path = "../d2s-sys" }
+tokio = { version = "1", features = ["macros", "rt", "time"] }

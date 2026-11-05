@@ -1,0 +1,14 @@
+[package]
+name = "d2s-sys"
+version = "0.0.1"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Private CXX/Fast DDS adapter for D2S Phase 0"
+
+[dependencies]
+cxx = "1"
+
+[build-dependencies]
+cxx-build = "1"

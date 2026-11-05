@@ -1,0 +1,72 @@
+name: Phase 0 Rust/Fast DDS
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  rustfmt:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+  native-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install native prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build git \
+            libasio-dev libtinyxml2-dev libssl-dev openjdk-17-jdk
+
+      - name: Build pinned Fast DDS dependencies and native runtime
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PREFIX="$RUNNER_TEMP/fastdds-install"
+          mkdir -p "$RUNNER_TEMP/dds-sources"
+          cd "$RUNNER_TEMP/dds-sources"
+
+          git clone --depth 1 --branch v1.3.1 https://github.com/eProsima/foonathan_memory_vendor.git foonathan
+          cmake -S foonathan -B foonathan/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PREFIX" -DBUILD_SHARED_LIBS=ON
+          cmake --build foonathan/build --target install -j 2
+
+          git clone --depth 1 --branch v2.3.0 https://github.com/eProsima/Fast-CDR.git fastcdr
+          cmake -S fastcdr -B fastcdr/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PREFIX" -DBUILD_SHARED_LIBS=ON
+          cmake --build fastcdr/build --target install -j 2
+
+          git clone --depth 1 --branch v3.6.2 https://github.com/eProsima/Fast-DDS.git fastdds
+          cmake -S fastdds -B fastdds/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+            -DCMAKE_PREFIX_PATH="$PREFIX" \
+            -DBUILD_SHARED_LIBS=ON
+          cmake --build fastdds/build --target install -j 2
+
+          echo "FASTDDS_INCLUDE_DIR=$PREFIX/include" >> "$GITHUB_ENV"
+          echo "FASTDDS_LIB_DIR=$PREFIX/lib" >> "$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=$PREFIX/lib:$PREFIX/lib64" >> "$GITHUB_ENV"
+
+      - name: Build pinned Fast DDS-Gen
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git clone --recursive --depth 1 --branch v4.3.0 https://github.com/eProsima/Fast-DDS-Gen.git "$RUNNER_TEMP/fastddsgen"
+          cd "$RUNNER_TEMP/fastddsgen"
+          ./gradlew assemble
+          echo "FASTDDSGEN=$RUNNER_TEMP/fastddsgen/scripts/fastddsgen" >> "$GITHUB_ENV"
+
+      - name: Build and run Rust examples
+        run: |
+          cargo test --workspace
+          bash scripts/smoke.sh

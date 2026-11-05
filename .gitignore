@@ -1,0 +1,6 @@
+/target/
+/build/
+/cmake-build-*/
+/.generated/
+**/*.swp
+.DS_Store

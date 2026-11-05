@@ -1,2 +1,39 @@
-# d2s-core
-The project is an open universal platform for organizing distributed data exchange between applications, services, industrial equipment, and computing nodes
+# D2S Platform
+
+Rust-first experimental DDS middleware and SDK. D2S uses [eProsima Fast DDS](https://github.com/eProsima/Fast-DDS) through a narrow C++20/[CXX](https://cxx.rs) bridge.
+
+**Status: Phase 0 — experimental prototype.** There is no stable API, federation, or general-purpose schema system yet.
+
+## What is in the repository
+
+- `crates/d2s` — safe Rust API, Tokio-based convenience polling, and two examples.
+- `crates/d2s-sys` — CXX bridge and a small C++20 Fast DDS adapter.
+- `schemas/D2sMessage.idl` — the one message type used by the prototype.
+- `scripts/smoke.sh` — two-process publisher/subscriber smoke test.
+- `docs/` — vision, RFCs, ADRs, and the [Phase 0 build guide](docs/phase-0.md).
+
+## Try the prototype (Linux)
+
+Prerequisites: Rust 1.88+, C++20 toolchain, Fast DDS 3.x, Fast CDR 2.x, and a compatible `fastddsgen` executable.
+
+In terminal 1:
+
+```sh
+cargo run -p d2s --example subscriber -- 10 5
+```
+
+In terminal 2:
+
+```sh
+cargo run -p d2s --example publisher -- 10 5
+```
+
+Both processes use DDS DomainId 10 and Topic `d2s.phase0.hello`. The publisher waits until at least one matching reader has been discovered. The sample is intentionally constrained to the single generated `D2sMessage` type.
+
+Detailed setup, environment variables, troubleshooting and testing: [docs/phase-0.md](docs/phase-0.md).
+
+## Documentation
+
+Start from [docs/README.md](docs/README.md). The proposal for a limited-visibility federated graph is **not implemented** by Phase 0.
+
+Licensed under [Apache License 2.0](LICENSE).
