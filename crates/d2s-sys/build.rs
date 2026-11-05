@@ -31,8 +31,7 @@ fn require_fastdds_headers() -> PathBuf {
 
 fn generate_idl(idl: &Path, out_dir: &Path) -> Vec<PathBuf> {
     fs::create_dir_all(out_dir).expect("cannot create Fast DDS-Gen output directory");
-    let generator = env::var_os("FASTDDSGEN")
-        .unwrap_or_else(|| OsString::from("fastddsgen"));
+    let generator = env::var_os("FASTDDSGEN").unwrap_or_else(|| OsString::from("fastddsgen"));
 
     let result = Command::new(&generator)
         .arg("-replace")
@@ -98,7 +97,10 @@ fn main() {
     build.compile("d2s_fastdds_native");
 
     if let Some(libdir) = env::var_os("FASTDDS_LIB_DIR") {
-        println!("cargo:rustc-link-search=native={}", PathBuf::from(libdir).display());
+        println!(
+            "cargo:rustc-link-search=native={}",
+            PathBuf::from(libdir).display()
+        );
     }
     println!("cargo:rustc-link-lib=dylib=fastdds");
     println!("cargo:rustc-link-lib=dylib=fastcdr");
@@ -111,11 +113,7 @@ fn main() {
     ] {
         println!("cargo:rerun-if-changed={}", path.display());
     }
-    for name in [
-        "FASTDDSGEN",
-        "FASTDDS_INCLUDE_DIR",
-        "FASTDDS_LIB_DIR",
-    ] {
+    for name in ["FASTDDSGEN", "FASTDDS_INCLUDE_DIR", "FASTDDS_LIB_DIR"] {
         println!("cargo:rerun-if-env-changed={name}");
     }
 }
