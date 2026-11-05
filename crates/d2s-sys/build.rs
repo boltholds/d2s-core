@@ -107,9 +107,15 @@ fn select_fastdds(workspace: &Path) -> FastDds {
     };
 
     fs::create_dir_all(&cache_path).expect("cannot create Fast DDS dependency cache");
-    let cache = cache_path
-        .canonicalize()
-        .expect("cannot resolve dependency cache");
+    // Windows PowerShell 5.1 cannot use Rust's verbatim \\?\ paths in every
+    // filesystem API. All cache paths chosen above are already absolute.
+    let cache = if target_os == "windows" {
+        cache_path
+    } else {
+        cache_path
+            .canonicalize()
+            .expect("cannot resolve dependency cache")
+    };
     let bootstrap = if target_os == "windows" {
         workspace.join("scripts/bootstrap-fastdds.ps1")
     } else {
@@ -261,7 +267,7 @@ fn stage_windows_dlls(bin_dir: &Path) {
 
 fn main() {
     let manifest = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap());
-    let workspace = manifest.join("../..").canonicalize().unwrap();
+    let workspace = manifest.join("../..");
     let idl = workspace.join("schemas/D2sMessage.idl");
     let out_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("generated");
     let selected = select_fastdds(&workspace);
