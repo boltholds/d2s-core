@@ -38,12 +38,19 @@ function Invoke-Logged {
     $previous = (Get-Location).Path
     try {
         if ($WorkingDirectory) { Set-Location -LiteralPath $WorkingDirectory }
+        # Windows PowerShell converts native stderr into non-terminating
+        # NativeCommandError records. Do not let harmless git/vcpkg progress
+        # messages abort the bootstrap; check the real native exit code.
+        $ErrorActionPreference = "Continue"
         & $Executable @Arguments *>> $Log
-        if ($LASTEXITCODE -ne 0) {
+        $exitCode = $LASTEXITCODE
+        $ErrorActionPreference = "Stop"
+        if ($exitCode -ne 0) {
             $tail = (Get-Content -LiteralPath $Log -Tail 80 -ErrorAction SilentlyContinue) -join [Environment]::NewLine
-            throw ("Command failed (exit " + $LASTEXITCODE + "): " + $Executable + " " + ($Arguments -join " ") + [Environment]::NewLine + "Log: " + $Log + [Environment]::NewLine + $tail)
+            throw ("Command failed (exit " + $exitCode + "): " + $Executable + " " + ($Arguments -join " ") + [Environment]::NewLine + "Log: " + $Log + [Environment]::NewLine + $tail)
         }
     } finally {
+        $ErrorActionPreference = "Stop"
         Set-Location -LiteralPath $previous
     }
 }
