@@ -14,6 +14,45 @@ Rust publisher  ─┐                     ┌─  Rust subscriber
 
 This establishes a credible base for future SDK and federation work. There is **no federation, global graph, NAT traversal, persistence or general schema generator** yet.
 
+## Automatic Windows installation
+
+On Windows **x64 MSVC**, `cargo build` uses a project-controlled Windows bootstrap script:
+
+1. Checks out a pinned [microsoft/vcpkg](https://github.com/microsoft/vcpkg) revision containing Fast DDS 3.6.2.
+2. Builds Fast DDS and its dependencies locally with `vcpkg install fastdds:x64-windows`.
+3. Builds [Fast DDS-Gen v4.3.0](https://github.com/eProsima/Fast-DDS-Gen) using the Gradle wrapper.
+4. Stages runtime DLLs next to the Rust example and test executables.
+
+It does not need a system-wide Fast DDS installation or elevated permissions. It **does** need Rust (`x86_64-pc-windows-msvc`), Visual Studio 2022 C++ Build Tools and Windows SDK, Git, CMake and a Java JDK (17+). `vcpkg` can download additional build dependencies. All downloads run on the first Cargo build; subsequent builds reuse the cache.
+
+To check the toolchain in `cmd.exe`:
+
+```bat
+rustup show active-toolchain
+where cargo
+where cmake
+where git
+java -version
+```
+
+To build and test:
+
+```bat
+cargo build --workspace --examples
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\smoke.ps1
+```
+
+**Cache and diagnostics:** the default Windows location is `%LOCALAPPDATA%\d2s\deps\x86_64-pc-windows-msvc`; `bootstrap-windows.log` contains native build output. For a shorter path or to reset a failed install, set `D2S_DEPS_DIR=C:\d2s-cache` or remove the cached directory. Custom installs remain available with `FASTDDS_INCLUDE_DIR`, `FASTDDS_LIB_DIR`, `FASTDDS_BIN_DIR` and `FASTDDSGEN`.
+
+**Supported:** native `x86_64-pc-windows-msvc`. Windows GNU and ARM64 toolchains and cross-compilation need dedicated support. On Windows, `d2s-sys/build.rs` copies `*.dll` from the selected dependency bin directory next to Cargo test/examples executables. This is a Phase 0 convenience; future consumers of the library must package runtime dependencies deliberately.
+
+### Limitations and supply-chain notes
+
+- The Windows dependency path is built by `vcpkg` rather than the Linux CMake bootstrap, but both target Fast DDS v3.6.2.
+- The pin uses a specific vcpkg Git commit; the Fast DDS port verifies upstream sources by archive checksum.
+- The tool executes Git, CMake, vcpkg and Gradle code from external projects; review this dependency chain for production use.
+- Building native Fast DDS from scratch may be resource-intensive. An already completed installation is reused.
+
 ## Automatic Fast DDS installation (native Linux)
 
 On the first `cargo build`, D2S automatically downloads and builds:
@@ -55,6 +94,7 @@ Cargo executes `scripts/bootstrap-fastdds.sh` from `crates/d2s-sys/build.rs`, th
 | `D2S_AUTO_INSTALL=0` | Disable downloading; requires explicitly supplied Fast DDS paths |
 | `FASTDDS_INCLUDE_DIR` | Fast DDS header directory containing `fastdds/` |
 | `FASTDDS_LIB_DIR` | Fast DDS and Fast CDR shared library directory |
+| `FASTDDS_BIN_DIR` | Windows runtime DLL location for a custom installation |
 | `FASTDDSGEN` | Path to an existing Fast DDS-Gen when using a custom installation |
 
 To use a preinstalled version instead of downloading:
@@ -68,7 +108,7 @@ cargo build --workspace --examples
 
 Both include and library overrides must be set together. Native Linux builds automatically add the chosen library directory to example executable RUNPATH. Existing custom installations must still provide transitive shared libraries. Cross-compilation and automatic macOS/Windows installation are not supported yet.
 
-**Supply-chain note:** the first build runs upstream CMake/Gradle build scripts downloaded from eProsima GitHub. Versions are pinned by release tag; pinning commit SHA and verifying artifacts is a future hardening task.
+**Supply-chain note:** the first build runs upstream CMake/Gradle build scripts downloaded from eProsima GitHub (or vcpkg on Windows). Versions are pinned by release tag; pinning commit SHA and verifying artifacts is a future hardening task.
 
 ## Run
 

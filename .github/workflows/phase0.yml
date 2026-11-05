@@ -37,3 +37,24 @@ jobs:
         run: |
           cargo test --workspace
           bash scripts/smoke.sh
+
+  windows-native-smoke:
+    runs-on: windows-2022
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Configure JDK 17
+        shell: pwsh
+        run: |
+          if ($env:JAVA_HOME_17_X64) {
+            "JAVA_HOME=$env:JAVA_HOME_17_X64" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
+            "$env:JAVA_HOME_17_X64\bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
+          }
+
+      - name: Build and smoke test Windows automatic bootstrap
+        shell: pwsh
+        run: |
+          cargo test --workspace
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke.ps1
