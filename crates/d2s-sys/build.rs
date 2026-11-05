@@ -122,7 +122,13 @@ fn select_fastdds(workspace: &Path) -> FastDds {
 
     let output = if target_os == "windows" {
         Command::new("powershell.exe")
-            .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File"])
+            .args([
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+            ])
             .arg(bootstrap)
             .arg("-CachePath")
             .arg(cache)
@@ -246,9 +252,8 @@ fn stage_windows_dlls(bin_dir: &Path) {
                 .map(|metadata| metadata.len() == source_size)
                 .unwrap_or(false);
             if !same_size {
-                fs::copy(dll, &dest).unwrap_or_else(|error| {
-                    panic!("Cannot stage DLL {}: {error}", dest.display())
-                });
+                fs::copy(dll, &dest)
+                    .unwrap_or_else(|error| panic!("Cannot stage DLL {}: {error}", dest.display()));
             }
         }
     }
