@@ -14,36 +14,61 @@ Rust publisher  ─┐                     ┌─  Rust subscriber
 
 This establishes a credible base for future SDK and federation work. There is **no federation, global graph, NAT traversal, persistence or general schema generator** yet.
 
-## Prerequisites (Linux)
+## Automatic Fast DDS installation (native Linux)
 
-- Stable Rust toolchain **1.88 or newer**, Cargo and rustfmt.
-- C++20 compiler (GCC or Clang), CMake (for building upstream packages).
-- eProsima **Fast DDS 3.x** (headers + dynamically linked runtime).
-- Compatible **Fast CDR 2.x** and upstream dependencies installed alongside Fast DDS.
-- **Fast DDS-Gen** available as `fastddsgen` or indicated with `FASTDDSGEN`. Use a generator release compatible with Fast DDS 3.x (for example Fast DDS-Gen v4.3.0).
-- Working local network or loopback discovery configuration that supports normal DDS participant matching.
+On the first `cargo build`, D2S automatically downloads and builds:
 
-Upstream source install instructions: [Fast DDS Linux guide](https://fast-dds.docs.eprosima.com/en/3.x/installation/sources/sources_linux.html). The CI workflow uses pinned Fast DDS-family versions as a reproducible reference.
+- [eProsima Fast DDS](https://github.com/eProsima/Fast-DDS) **v3.6.2**.
+- Fast CDR **v2.3.0**, foonathan_memory_vendor **v1.3.1**.
+- Fast DDS-Gen **v4.3.0** (including its Git submodules).
 
-For a non-system install, configure:
+Everything is installed in the project-local cache, by default `target/d2s-deps/<target-triple>/`. It does not use sudo, modify system libraries or reinstall on every build. An OS-level file lock prevents concurrent writes to the same cache; logs are saved as `bootstrap.log`. Initial setup needs Internet access.
+
+### Required system build tools
+
+Rust 1.88+, C++20 compiler, CMake 3.22+, Ninja, Git, `flock`, JDK 17+, and development headers for Asio, TinyXML2 and OpenSSL. These build tools are not installed by Cargo; they must already be available.
+
+Ubuntu 24.04:
 
 ```sh
-export FASTDDS_INCLUDE_DIR="$HOME/fastdds-install/include"
-export FASTDDS_LIB_DIR="$HOME/fastdds-install/lib"
-export LD_LIBRARY_PATH="$FASTDDS_LIB_DIR:${LD_LIBRARY_PATH:-}"
-export FASTDDSGEN="$HOME/Fast-DDS-Gen/scripts/fastddsgen"
+sudo apt-get update
+sudo apt-get install -y build-essential git cmake ninja-build \
+    libasio-dev libtinyxml2-dev libssl-dev openjdk-17-jdk
 ```
 
-`FASTDDS_INCLUDE_DIR` must contain the `fastdds/` subdirectory, `FASTDDS_LIB_DIR` must contain `libfastdds.so` and `libfastcdr.so` (or equivalent versioned shared libraries). Their own shared dependencies must be resolvable by the dynamic loader. The build script searches `/usr/local/include` and `/usr/include` when no include override is given.
-
-## Build
+Then run:
 
 ```sh
 cargo build --workspace --examples
 cargo test --workspace
+bash scripts/smoke.sh
 ```
 
-At build time, `d2s-sys/build.rs` calls Fast DDS-Gen for `schemas/D2sMessage.idl` and compiles the generated C++ source with the CXX bridge and our adapter. Generated sources live only in Cargo's `OUT_DIR`, not in git.
+Cargo executes `scripts/bootstrap-fastdds.sh` from `crates/d2s-sys/build.rs`, then runs the installed generator for `schemas/D2sMessage.idl` and compiles the generated C++ with the CXX bridge. No manual Fast DDS commands or environment variables are needed for the default Linux build.
+
+### Configuration
+
+| Variable | Effect |
+|---|---|
+| `D2S_DEPS_DIR` | Custom path for the local native dependency cache |
+| `CARGO_TARGET_DIR` | Changes the default native dependency cache root |
+| `D2S_AUTO_INSTALL=0` | Disable downloading; requires explicitly supplied Fast DDS paths |
+| `FASTDDS_INCLUDE_DIR` | Fast DDS header directory containing `fastdds/` |
+| `FASTDDS_LIB_DIR` | Fast DDS and Fast CDR shared library directory |
+| `FASTDDSGEN` | Path to an existing Fast DDS-Gen when using a custom installation |
+
+To use a preinstalled version instead of downloading:
+
+```sh
+export FASTDDS_INCLUDE_DIR=/opt/fastdds/include
+export FASTDDS_LIB_DIR=/opt/fastdds/lib
+export FASTDDSGEN=/opt/Fast-DDS-Gen/scripts/fastddsgen
+cargo build --workspace --examples
+```
+
+Both include and library overrides must be set together. Native Linux builds automatically add the chosen library directory to example executable RUNPATH. Existing custom installations must still provide transitive shared libraries. Cross-compilation and automatic macOS/Windows installation are not supported yet.
+
+**Supply-chain note:** the first build runs upstream CMake/Gradle build scripts downloaded from eProsima GitHub. Versions are pinned by release tag; pinning commit SHA and verifying artifacts is a future hardening task.
 
 ## Run
 
@@ -104,10 +129,10 @@ Each Publisher/Subscriber owns its own DomainParticipant at this stage. They are
 
 ## Troubleshooting
 
-- **Fast DDS headers missing:** install Fast DDS development files or set `FASTDDS_INCLUDE_DIR`.
-- **fastddsgen not found:** install generator or set `FASTDDSGEN` to the executable path.
-- **Linker cannot find -lfastdds:** set `FASTDDS_LIB_DIR`.
-- **Loader cannot find .so:** add that library directory to `LD_LIBRARY_PATH` (Linux).
+- **Fast DDS headers missing:** check the local cache bootstrap log or supply matching custom Fast DDS include/lib paths.
+- **fastddsgen not found:** inspect the local bootstrap log or set `FASTDDSGEN` for a custom installation.
+- **Linker cannot find -lfastdds:** inspect the local cache or set `FASTDDS_LIB_DIR` for a custom installation.
+- **Loader cannot find .so:** check executable RUNPATH, external OS libraries and custom install paths.
 - **No matching reader:** confirm both DomainId values, allowed DDS transport/discovery, firewalls/multicast and compatible QoS. Default RTPS UDP ports make very large DomainId values impractical.
 - **Generated API incompatibility:** use generator release compatible with your installed Fast DDS 3.x; do not mix Fast DDS 2.x and 3.x code-generation artifacts.
 

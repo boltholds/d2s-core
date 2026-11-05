@@ -14,7 +14,7 @@ Rust-first experimental DDS middleware and SDK. D2S uses [eProsima Fast DDS](htt
 
 ## Try the prototype (Linux)
 
-Prerequisites: Rust 1.88+, C++20 toolchain, Fast DDS 3.x, Fast CDR 2.x, and a compatible `fastddsgen` executable.
+Prerequisites: Rust 1.88+, C++20 compiler, Git, CMake, Ninja, JDK 17+, Asio, TinyXML2 and OpenSSL development headers. Fast DDS, Fast CDR, foonathan_memory_vendor, and Fast DDS-Gen are downloaded and built automatically by Cargo.
 
 In terminal 1:
 
@@ -29,6 +29,8 @@ cargo run -p d2s --example publisher -- 10 5
 ```
 
 Both processes use DDS DomainId 10 and Topic `d2s.phase0.hello`. The publisher waits until at least one matching reader has been discovered. The sample is intentionally constrained to the single generated `D2sMessage` type.
+
+The pinned source builds are cached under `target/d2s-deps/`. No system-wide Fast DDS installation or sudo permissions are required for its installation; first build needs network access.
 
 Detailed setup, environment variables, troubleshooting and testing: [docs/phase-0.md](docs/phase-0.md).
 
